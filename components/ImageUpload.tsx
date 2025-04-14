@@ -6,7 +6,6 @@ import ImageKit from "imagekit";
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
-
 import { cn } from "@/lib/utils";
 
 const {
@@ -47,7 +46,7 @@ interface Props {
   value?: string;
 }
 
-const ImageUpload = ({
+const FileUpload = ({
   type,
   accept,
   placeholder,
@@ -73,15 +72,14 @@ const ImageUpload = ({
 
   const onError = (error: any) => {
     console.log(error);
-
     toast(`${type} upload failed`, {
       description: `Your ${type} could not be uploaded. Please try again.`,
     });
   };
+
   const onSuccess = (res: any) => {
     setFile(res);
     onFileChange(res.filePath);
-
     toast(`${type} uploaded successfully`, {
       description: `${res.filePath} uploaded successfully!`,
     });
@@ -99,7 +97,7 @@ const ImageUpload = ({
     } else if (type === "video") {
       if (file.size > 50 * 1024 * 1024) {
         toast("File size too large", {
-          description: "Please upload a file that is less than 20MB in size",
+          description: "Please upload a file that is less than 50MB in size",
         });
         return false;
       }
@@ -184,4 +182,4 @@ const ImageUpload = ({
   );
 };
 
-export default ImageUpload;
+export default FileUpload;
