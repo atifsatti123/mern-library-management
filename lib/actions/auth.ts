@@ -1,12 +1,11 @@
 "use server";
-
-import { eq } from "drizzle-orm";
-import { db } from "@/database/drizzle";
+import { db } from "./../../database/drizzle";
 import { users } from "@/database/schema";
+import { eq } from "drizzle-orm";
 import { hash } from "bcryptjs";
 import { signIn } from "@/auth";
 import { headers } from "next/headers";
-import ratelimit from "@/lib/ratelimit";
+import ratelimit from "../ratelimit";
 import { redirect } from "next/navigation";
 import { workflowClient } from "@/lib/workflow";
 import config from "@/lib/config";
@@ -34,17 +33,15 @@ export const signInWithCredentials = async (
 
     return { success: true };
   } catch (error) {
-    console.log(error, "Signin error");
+    console.log(error, " Signin error");
     return { success: false, error: "Signin error" };
   }
 };
 
-export const signUp = async (params: AuthCredentials) => {
+export const signup = async (params: AuthCredentials) => {
   const { fullName, email, universityId, password, universityCard } = params;
-
   const ip = (await headers()).get("x-forwarded-for") || "127.0.0.1";
   const { success } = await ratelimit.limit(ip);
-
   if (!success) return redirect("/too-fast");
 
   const existingUser = await db
@@ -58,7 +55,6 @@ export const signUp = async (params: AuthCredentials) => {
   }
 
   const hashedPassword = await hash(password, 10);
-
   try {
     await db.insert(users).values({
       fullName,
@@ -68,8 +64,8 @@ export const signUp = async (params: AuthCredentials) => {
       universityCard,
     });
 
-    await workflowClient.trigger({
-      url: `${config.env.prodApiEndPoint}/api/workflows/onboarding`,
+    await workflowClient.publishJSON({
+      url: `${config.env.prodApiEndPoint}.api/workflows/onboarding`,
       body: {
         email,
         fullName,

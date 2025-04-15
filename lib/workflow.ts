@@ -1,35 +1,40 @@
-import { Client as WorkflowClient } from "@upstash/workflow";
-import { Client as QStashClient, resend } from "@upstash/qstash";
+import { Client as QStashClient } from "@upstash/qstash";
 import config from "@/lib/config";
 
-export const workflowClient = new WorkflowClient({
-  baseUrl: config.env.upstash.qstashUrl,
-  token: config.env.upstash.qstashToken,
-});
-
-const qstashClient = new QStashClient({
+// 👇 Export this if you want to use it elsewhere
+export const workflowClient = new QStashClient({
   token: config.env.upstash.qstashToken,
 });
 
 export const sendEmail = async ({
   email,
+  fullName,
   subject,
   message,
 }: {
   email: string;
+  fullName: string;
   subject: string;
   message: string;
 }) => {
-  await qstashClient.publishJSON({
-    api: {
-      name: "email",
-      provider: resend({ token: config.env.resendToken }),
+  await workflowClient.publishJSON({
+    url: "https://api.emailjs.com/api/v1.0/email/send",
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
     },
     body: {
-      from: "JS Mastery <contact@adrianjsmastery.com>",
-      to: [email],
-      subject,
-      html: message,
+      service_id: process.env.EMAILJS_SERVICE_ID,
+      template_id: process.env.EMAILJS_TEMPLATE_ID,
+      user_id: process.env.EMAILJS_PUBLIC_KEY,
+      accessToken: process.env.EMAILJS_PRIVATE_KEY,
+      template_params: {
+        to_name: fullName,
+        name: "JS Mastery Bot",
+        email,
+        message,
+        subject,
+      },
     },
   });
 };

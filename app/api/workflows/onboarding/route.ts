@@ -2,7 +2,7 @@ import { serve } from "@upstash/workflow/nextjs";
 import { db } from "@/database/drizzle";
 import { users } from "@/database/schema";
 import { eq } from "drizzle-orm";
-import { sendEmail } from "@/lib/workflow";
+import { sendEmail } from "@/lib/workflow"; // ✅ import the QStash-EmailJS version
 
 type UserState = "non-active" | "active";
 
@@ -10,10 +10,6 @@ type InitialData = {
   email: string;
   fullName: string;
 };
-
-const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
-const THREE_DAYS_IN_MS = 3 * ONE_DAY_IN_MS;
-const THIRTY_DAYS_IN_MS = 30 * ONE_DAY_IN_MS;
 
 const getUserState = async (email: string): Promise<UserState> => {
   const user = await db
@@ -26,31 +22,28 @@ const getUserState = async (email: string): Promise<UserState> => {
 
   const lastActivityDate = new Date(user[0].lastActivityDate!);
   const now = new Date();
-  const timeDifference = now.getTime() - lastActivityDate.getTime();
+  const diff = now.getTime() - lastActivityDate.getTime();
 
-  if (
-    timeDifference > THREE_DAYS_IN_MS &&
-    timeDifference <= THIRTY_DAYS_IN_MS
-  ) {
-    return "non-active";
-  }
+  const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
+  const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
 
+  if (diff > THREE_DAYS && diff <= THIRTY_DAYS) return "non-active";
   return "active";
 };
 
 export const { POST } = serve<InitialData>(async (context) => {
   const { email, fullName } = context.requestPayload;
 
-  // Welcome Email
   await context.run("new-signup", async () => {
     await sendEmail({
       email,
-      subject: "Welcome to the platform",
-      message: `Welcome ${fullName}!`,
+      fullName,
+      subject: "Welcome to the platform!",
+      message: `Hey ${fullName}, thanks for joining! 🚀`,
     });
   });
 
-  await context.sleep("wait-for-3-days", 60 * 60 * 24 * 3);
+  await context.sleep("wait-3-days", 60 * 60 * 24 * 3);
 
   while (true) {
     const state = await context.run("check-user-state", async () => {
@@ -58,23 +51,25 @@ export const { POST } = serve<InitialData>(async (context) => {
     });
 
     if (state === "non-active") {
-      await context.run("send-email-non-active", async () => {
+      await context.run("email-non-active", async () => {
         await sendEmail({
           email,
+          fullName,
           subject: "Are you still there?",
-          message: `Hey ${fullName}, we miss you!`,
+          message: `Hi ${fullName}, we noticed you’ve been inactive for a while. Come back soon!`,
         });
       });
-    } else if (state === "active") {
-      await context.run("send-email-active", async () => {
+    } else {
+      await context.run("email-active", async () => {
         await sendEmail({
           email,
+          fullName,
           subject: "Welcome back!",
-          message: `Welcome back ${fullName}!`,
+          message: `Awesome to see you again, ${fullName}!`,
         });
       });
     }
 
-    await context.sleep("wait-for-1-month", 60 * 60 * 24 * 30);
+    await context.sleep("wait-30-days", 60 * 60 * 24 * 30);
   }
 });
