@@ -11,5 +11,14 @@ const {
 const imagekit = new ImageKit({ publicKey, privateKey, urlEndpoint });
 
 export async function GET() {
-  return NextResponse.json(imagekit.getAuthenticationParameters());
+  return (
+    NextResponse.json(imagekit.getAuthenticationParameters()),
+    {
+      status: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*", // or your frontend domain
+        "Content-Type": "application/json",
+      },
+    }
+  );
 }
