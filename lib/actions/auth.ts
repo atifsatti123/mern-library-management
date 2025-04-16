@@ -1,5 +1,5 @@
 "use server";
-import { db } from "@/database/drizzle";
+
 import { users } from "@/database/schema";
 import { eq } from "drizzle-orm";
 import { hash } from "bcryptjs";
@@ -9,6 +9,7 @@ import ratelimit from "../ratelimit";
 import { redirect } from "next/navigation";
 import { workflowClient } from "@/lib/workflow";
 import config from "@/lib/config";
+import { db } from "@/database/drizzle";
 
 export const signInWithCredentials = async (
   params: Pick<AuthCredentials, "email" | "password">
