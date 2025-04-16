@@ -65,13 +65,15 @@ export const signUp = async (params: AuthCredentials) => {
       universityCard,
     });
 
-    await workflowClient.publishJSON({
-      url: `${config.env.prodApiEndPoint}/api/workflows/onboarding`,
-      body: {
-        email,
-        fullName,
-      },
-    });
+    try {
+      const response = await workflowClient.publishJSON({
+        url: `${config.env.prodApiEndPoint}/api/workflows/onboarding`,
+        body: { email, fullName },
+      });
+      console.log("Published to QStash:", response);
+    } catch (err) {
+      console.error("QStash publish error:", err);
+    }
 
     await signInWithCredentials({ email, password });
 
