@@ -1,5 +1,4 @@
 "use client";
-
 import { IKImage, ImageKitProvider, IKUpload, IKVideo } from "imagekitio-next";
 import config from "@/lib/config";
 import ImageKit from "imagekit";
